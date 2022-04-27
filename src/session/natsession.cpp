@@ -53,6 +53,12 @@ pair<string, uint16_t> NATSession::get_target_endpoint() {
     sockaddr_storage destaddr;
     memset(&destaddr, 0, sizeof(sockaddr_storage));
     socklen_t socklen = sizeof(destaddr);
+#ifdef __FreeBSD__
+    int error = getsockname(fd, (struct sockaddr *)&destaddr, &socklen);
+    if (error) {
+        return make_pair("", 0);
+    }
+#else
     int error = getsockopt(fd, SOL_IPV6, IP6T_SO_ORIGINAL_DST, &destaddr, &socklen);
     if (error) {
         error = getsockopt(fd, SOL_IP, SO_ORIGINAL_DST, &destaddr, &socklen);
@@ -60,6 +66,7 @@ pair<string, uint16_t> NATSession::get_target_endpoint() {
             return make_pair("", 0);
         }
     }
+#endif
     char ipstr[INET6_ADDRSTRLEN];
     uint16_t port;
     if (destaddr.ss_family == AF_INET) {

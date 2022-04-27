@@ -44,6 +44,12 @@ using namespace boost::asio::ssl;
 typedef boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEPORT> reuse_port;
 #endif // ENABLE_REUSE_PORT
 
+#ifdef __FreeBSD__
+#ifdef ENABLE_NAT
+typedef boost::asio::detail::socket_option::boolean<IPPROTO_IP, IP_BINDANY> bind_any;
+#endif // ENABLE_NAT
+#endif // __FreeBSD__
+
 Service::Service(Config &config, bool test) :
     config(config),
     socket_acceptor(io_context),
@@ -68,6 +74,12 @@ Service::Service(Config &config, bool test) :
             Log::log_with_date_time("SO_REUSEPORT is not supported", Log::WARN);
 #endif // ENABLE_REUSE_PORT
         }
+
+#ifdef __FreeBSD__
+#ifdef ENABLE_NAT
+        socket_acceptor.set_option(bind_any(true));
+#endif
+#endif
 
         socket_acceptor.bind(listen_endpoint);
         socket_acceptor.listen();
